@@ -1,0 +1,323 @@
+Angular - Node JS - MySQL Application
+
+Install MySQL Server:
+
+  
+
+First install -> Python 3.7.3
+
+https://www.python.org/downloads/release/python-373/
+
+
+Install - MYSQL Server -- All tools for Developer and select default settings.
+
+
+https://dev.mysql.com/downloads/file/?id=484920
+
+
+Create MySQL - Database and Table
+
+
+Using MySQL - Control Center create database and table, each command  individually high and run it.
+
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'YourRootPassword';
+
+ -- then
+ FLUSH PRIVILEGES;
+
+create database school;
+
+use school;
+
+drop table school.student;
+
+CREATE TABLE school.student (
+    id int NOT NULL AUTO_INCREMENT,
+    firstName varchar(255) NOT NULL,
+    lastName varchar(255),
+    PRIMARY KEY (id)
+);
+
+select * from student
+
+
+
+Application Flow
+
+Node JS - server.js  - this file contains all REST services APIs.  It perfroms the CRUD (Create, Remove, Update and Display) using mysql database.
+
+==========
+
+
+npm install mysql --save
+
+npm install express --save
+
+npm install body-parser  --save
+
+var express = require('express');
+var app = express();
+var fs = require("fs");
+const bodyParser = require('body-parser');
+const mysql = require('mysql')
+
+//ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password'
+// create database school;
+
+// use school;
+
+// CREATE TABLE school.student (
+//     id int NOT NULL AUTO_INCREMENT,
+//     firstName varchar(255) NOT NULL,
+//     lastName varchar(255),
+//     PRIMARY KEY (id)
+// );
+
+
+const options = {
+ host: 'localhost',
+ user: 'root',
+ password: 'test123',
+ database: 'school'
+}
+
+const connection = mysql.createConnection(options)
+
+connection.connect(function(err) {
+ if (err) throw err;
+ console.log("Connected!");
+ });
+
+app.use(bodyParser.urlencoded({ extended: false }))
+// parse application/json
+app.use(bodyParser.json())
+
+app.use(function(req, res, next) {
+ res.header("content-type", "application/json");
+ res.header("Access-Control-Allow-Origin", "*");
+ res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
+ res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");   
+ next();
+});
+
+app.get('/students', function (req, res) {   
+ connection.query("SELECT * FROM  `school`.`student` ", function (err, result, fields) {
+ if (err) throw err;
+ res.end(JSON.stringify(result));
+    });
+})
+
+
+app.post('/students', function (req, res) {   
+ var firstname = req.body.firstName;
+ var lastname = req.body.lastName;
+
+ console.log ("post");
+ console.log(req.body);
+
+ connection.query("INSERT INTO `school`.`student` (`firstname`, `lastname`) VALUES ('"+firstname+"', '"+lastname+"'); ", function (err, result, fields) {
+ if (err) throw err;
+ res.end(JSON.stringify(result));
+    });
+})
+
+app.get('/students/:studentId', function (req, res) {
+ connection.query("SELECT * FROM `school`.`student` where id = " + req.params.studentId, function (err, result, fields) {
+ if (err) throw err;
+ res.end(JSON.stringify(result));
+    });
+})
+
+app.put('/students/:studentId', function (req, res) {
+ console.log ("put");
+ console.log(req.body);
+
+ connection.query("UPDATE  `school`.`student` set firstname = '"+req.body.firstName+ "' , lastname ='" +req.body.lastName + "' where id = " + req.params.studentId, function (err, result, fields) {
+ if (err) throw err;
+ res.end(JSON.stringify(result));
+    });
+})
+
+app.delete('/students/:studentId', function (req, res) {
+ connection.query("DELETE FROM  `school`.`student`  WHERE id = " + req.params.studentId, function (err, result, fields) {
+ if (err) throw err;
+ res.end(JSON.stringify(result));
+    });
+})
+
+
+app.post('/addStudent', function (req, res) {
+ // First read existing users.
+ res.end( JSON.stringify(req.body));
+})
+
+var server = app.listen(9000, function () {
+ var host = server.address().address
+ var port = server.address().port
+ console.log("Example app listening at http://%s:%s", host, port)
+})
+
+
+Entity / Student Model : student.ts
+
+
+This class attribute should match the DB Table attribute
+
+ 
+export class Student {
+ constructor(
+ public id: number,
+ public firstName: string,
+ public lastName: string ){
+ 
+    }
+}
+
+
+
+
+Angular Component/student-form-component.ts
+
+
+
+ 
+import { Component, OnInit } from '@angular/core';
+import { Student } from 'src/app/entities/student';
+import { HttpClient } from '@angular/common/http';
+
+@Component({
+ selector: 'app-student-form',
+ templateUrl: './student-form.component.html',
+ styleUrls: ['./student-form.component.css']
+})
+export class StudentFormComponent implements OnInit {
+
+ //if submit button is pressed
+ submitted = false;
+
+// if edit button is pressed
+ edited = false;
+
+ //default value
+ student = new Student(42, 'Tom', 'Patel');
+ 
+ studentList: Array<Student> = []
+
+ constructor(private http: HttpClient){
+
+  }
+
+ onSubmit() { 
+ //this.submitted = true; 
+ 
+ if (this.edited == true) return;
+
+ // const stu = {
+ //   first_name: this.student.firstName,
+ //   last_name: this.student.lastName,
+ // }    
+
+//Calling REST Service
+ this.http.post('http://localhost:9000/students/', this.student)
+    .subscribe(
+      (res) => {
+          console.log(res);
+          this.getAllStudents();
+             }
+    );
+  }
+
+ onPutSubmit() {
+
+ this.edited = true; 
+ 
+ // const stu = {
+ //   first_name: this.student.firstName,
+ //   last_name: this.student.lastName,
+ // }   
+ 
+ // Create a student record in the database
+ this.http.put('http://localhost:9000/students/'+ this.student.id, this.student)
+    .subscribe(() => {
+        this.getAllStudents();  //calling 
+    });
+  }
+
+// execute this method, on page initialization 
+ ngOnInit() {
+      this.getAllStudents();  //calling 
+  }
+  
+  
+ // Read all students records from the database
+ getAllStudents(){
+ this.http.get('http://localhost:9000/students')
+    .subscribe((students: Array<Student>) => {
+       this.studentList = students;   //assign 
+    });
+  }
+  
+  
+ // Update a student record in the database
+ onEditClick(event: any, data: any) {
+  console.log(data);
+  // assign value to model
+  this.student.id = data.id;
+  this.student.firstName = data.firstName;
+  this.student.lastName = data.lastName;    
+  }
+  
+  
+ // Delete a student record in the database
+onDeleteClick(event: any, data: Student) {
+ this.http.delete('http://localhost:9000/students/'+data.id)
+    .subscribe(() => {
+ this.getAllStudents();
+    });
+  }
+
+}
+
+
+Angular Form Template
+
+
+<table> 
+ <tr *ngFor="let student of studentList">
+ <td>{{student.firstName}}</td>
+ <td>{{student.lastName}}</td>
+ <td><span (click)="onEditClick($event, student)">&nbsp; &nbsp; Edit &nbsp; &nbsp; </span></td>
+ <td><span (click)="onDeleteClick($event, student)">Delete</span></td>
+ </tr> 
+</table>
+
+
+<div class="container">
+ <div [hidden]="submitted">
+ 
+ <h1>Student Form</h1>
+ 
+ <form (ngSubmit)="onSubmit()" #studentForm="ngForm">
+ <div class="form-group">
+ <label for="name">First Name</label>
+ <input type="text" class="form-control" id="firstName" required
+               [(ngModel)]="student.firstName" name="firstName"  #name="ngModel">
+ <div [hidden]="name.valid || name.pristine" class="alert alert-danger">
+          Name is required
+ </div>
+
+
+<label for="name">Last Name</label>
+ <input type="text" class="form-control" id="lastName" required
+               [(ngModel)]="student.lastName" name="lastName" #name="ngModel">
+ <div [hidden]="name.valid || name.pristine"  class="alert alert-danger">
+          Name is required
+ </div>
+ </div>
+
+ <button type="submit" class="btn btn-success"disabled]="!studentForm.form.valid">Submit</button>
+ <br> 
+ <button (click) = "onPutSubmit()" class="btn btn-success" [disabled]="!studentForm.form.valid">Edit</button>
+ </form>
+ </div>
+ 
