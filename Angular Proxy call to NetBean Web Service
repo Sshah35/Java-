@@ -1,0 +1,180 @@
+@Path("student")
+public class StudentService {
+
+    /**
+     * Retrieves representation of an instance of com.itexps.StudentService
+     * @return an instance of java.lang.String
+     */
+    @GET
+    @Produces()
+    public String get() {
+      
+       return "{\"id\":1,\"name\":\"tushar\"}";
+    }
+ 
+}
+
+REST URL: 
+
+
+http://localhost:8080/myrsws/webresources/student
+
+{"id":1,"name":"tushar"}
+
+In Angular Web App
+
+
+Create a proxy file proxy.conf.json
+
+ 
+
+
+{
+ "/myrsws/*": {
+ "target": "http://localhost:8080",
+ "secure": false,
+ "logLevel": "debug",
+ "changeOrigin": true
+    }
+  }
+
+
+Create a model class: student.ts
+
+
+
+ 
+export class Student {
+ constructor(
+ public id: number,
+ public name: string
+    ) { 
+       }
+   }
+
+Modify app module file 
+
+ 
+
+
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+
+import { AppComponent } from './app.component';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
+
+@NgModule({
+ declarations: [
+ AppComponent
+  ],
+ imports: [
+ BrowserModule,
+ HttpClientModule
+  ],
+ providers: [],
+ bootstrap: [AppComponent]
+})
+export class AppModule { }
+
+
+
+Modify component file
+
+
+
+ 
+import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Student } from 'src/app/student';
+
+@Component({
+ selector: 'app-root',
+ templateUrl: './app.component.html',
+ styleUrls: ['./app.component.css']
+})
+export class AppComponent implements OnInit {
+ title = 'angularws';
+
+ // create a default Student
+ student = new Student (0,"");
+ 
+//create customer with http object
+ constructor(private http: HttpClient) {
+  }
+
+
+// initialize 
+ ngOnInit() {
+ this.getAllStudent();
+  }
+ 
+
+
+// Read all customers records from node js web service
+ getAllStudent() {
+ this.http.get('http://localhost:4200/myrsws/webresources/student')
+      .subscribe((student: Student) => {
+ 
+ console.log(student);
+ this.student = student;
+      });
+  }
+
+}
+
+
+
+Modify the package.json with  "start": "ng serve --proxy-config proxy.conf.json"
+
+ 
+
+
+{
+ "name": "angularws",
+ "version": "0.0.0",
+ "scripts": {
+ "ng": "ng",
+ "start": "ng serve --proxy-config proxy.conf.json",
+ "build": "ng build",
+ "test": "ng test",
+ "lint": "ng lint",
+ "e2e": "ng e2e"
+  },
+ 
+ 
+
+in app.component.html  , remove all the existing code and write the following 
+
+
+
+<h1>
+  Web Service data: {{student.id}}, {{student.name}}
+</h1>
+
+
+
+Now run the application
+
+
+
+npm start
+
+http://localhost:4200/myrsws/webresources/student
+
+
+Will auto route to 
+
+
+http://localhost:4800/api/myrsws/webresources/student
+
+
+And the result will be
+
+
+{"id":1,"name":"sammy"}
+
+
+Source code:
+
+
+
