@@ -1,0 +1,171 @@
+Angular Router Application
+ 
+
+Step 1: Install The Angular Project.
+Install Angular CLI globally on your system by typing the following command.
+
+npm install -g @angular/cli
+
+Now, create one project called ngRouter.
+
+ng new ngRouter
+
+- for route module, say N
+- for style sheet, select css or just press enter 
+
+Step 2: Make three components for the application.
+Create one directory components inside src >> app folder called components.
+
+
+
+cd ngRouter
+cd src
+cd app
+mkdir components 
+cd components 
+
+
+Next, make three components inside components  dir by typing the following command.
+
+ng g c home
+ng g c about
+ng g c dashboard
+
+
+So, our app.module.ts file looks like this.
+
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { RouterModule } from '@angular/router';
+
+
+// remove import { AppRoutingModule } from './app-routing.module';
+
+import { AppComponent } from './app.component';
+import { HomeComponent } from './home/home.component';
+import { AboutComponent } from './about/about.component';
+import { DashboardComponent } from './dashboard/dashboard.component';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    HomeComponent,
+    AboutComponent,
+    DashboardComponent
+  ],
+  imports: [
+    BrowserModule, RouterModule
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+
+
+Step 3: Routing and Navigation.
+
+The Angular Router enables navigation from one view to the next as users perform application tasks.
+
+
+First, we need to import the routing modules inside our app.module.ts file , if it is not there.
+
+// app.module.ts
+
+import { RouterModule } from '@angular/router';
+
+imports: [
+    BrowserModule, RouterModule
+],
+
+Configuration
+
+Now we need to configure the routes. So make one file inside app directory called routerConfig.ts file.
+
+Write the following code in it.
+
+// routerConfig.ts
+
+import { Routes } from '@angular/router';
+import { HomeComponent } from './components/home/home.component';
+import { AboutComponent } from './components/about/about.component';
+import { DashboardComponent } from './components/dashboard/dashboard.component';
+
+const appRoutes: Routes = [
+  { path: 'home', 
+    component: HomeComponent 
+  },
+  {
+    path: 'about',
+    component: AboutComponent
+  },
+  { path: 'dashboard',
+    component: DashboardComponent
+  }
+];
+export default appRoutes;
+
+We have defined one array and inside that array, we have registered the different routes with their components. Finally, we have exported it.
+
+
+Now, import this object inside app.module.ts and register the module.
+
+// app.module.ts
+
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { RouterModule } from '@angular/router';
+
+import { AppComponent } from './app.component';
+import { HomeComponent } from './components/home/home.component';
+import { AboutComponent } from './components/about/about.component';
+import { DashboardComponent } from './components/dashboard/dashboard.component';
+import appRoutes from './routerConfig';
+@NgModule({
+  declarations: [
+    AppComponent,
+    HomeComponent,
+    AboutComponent,
+    DashboardComponent
+  ],
+ imports: [
+    BrowserModule, RouterModule.forRoot(appRoutes)
+],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+Step 4: Define the Router outlet.
+
+In the app.component.html file, remove the existing code and write the following code.
+
+<!-- app.component.html  -->
+
+<div style="text-align:center">
+  <h1>
+    Welcome to {{title}}!!
+  </h1>
+  <nav>
+    <a routerLink="home" routerLinkActive="active">Home</a>|
+    <a routerLink="about">About</a>|
+    <a routerLink="dashboard">Dashboard</a>
+  </nav>
+  <router-outlet></router-outlet>
+</div>
+
+Now, we have already changed the title inside app.component.ts file.
+
+// app.component.ts
+
+title = 'Angular Router Tutorial';
+
+Start the app by the following command.
+
+
+ng serve --open
+
+ Source code:
+
+-- If you get an error: can not load property load Children then, go to app.module.ts , press one  enter after the routerConfig line , save it , it should fix the problem
+
+ 
+
