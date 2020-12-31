@@ -1,0 +1,214 @@
+Angular pushing the form data to Node JS Rest Service
+
+
+
+
+
+This is an Angular and Node JS Project which covers the following steps:
+ - Create a simple Angular Form with a dual binding (Component <-> View)
+      First name, Last name Add Form validation       
+- Upon the submit, If the validation is successful, collect the form’s data in the Component  
+- onSubmit()  method Submit the form data to a REST endpoint 
+      (local NodeJS simple post endpoint )
+- Read the request payload in the NodeJS and encode the data item and log  it
+Install packages
+
+ 
+
+npm install express --save
+npm install body-parser 
+NG commands:
+
+ 
+
+ng generate component StudentForm
+ ng generate class Student
+
+Student Entity
+
+
+== entity class src\entity\student.ts===
+
+// Model class with two attributes (firstname and last name)
+
+export class Student {
+    constructor(public firstName: string,
+                public lastName: string ){
+        
+    }
+}
+
+
+
+== Angular Component to read the form data and submit to REST endpoint
+
+
+
+== \app\component\student-form.component.ts ==
+
+import { Component, OnInit } from '@angular/core';
+import { Student } from 'src/app/entities/student';
+import { HttpClient } from '@angular/common/http';
+
+@Component({
+  selector: 'app-student-form',
+  templateUrl: './student-form.component.html',
+  styleUrls: ['./student-form.component.css']
+})
+export class StudentFormComponent implements OnInit {
+  submitted = false;
+ 
+  student = new Student('Tom', 'Patel');
+
+  constructor(private http: HttpClient){
+
+  }
+
+  onSubmit() { 
+    this.submitted = true; 
+    console.log(this.student);
+    //Submitting the form (or model) data to REST endpoint 
+        this.http.post('http://localhost:8089/addStudent/', this.student)
+    .subscribe(
+      (res: Student) => {console.log(res.firstName);}  // display response data
+    );
+  }
+
+  ngOnInit() {
+
+  }
+
+}
+
+== Angular Application Module ==
+
+
+
+== App moddule app.module.ts  == add http client and form moddule
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { FormsModule }   from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
+
+import { AppComponent } from './app.component';
+import { StudentFormComponent } from './components/student-form/student-form.component';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    StudentFormComponent
+  ],
+  imports: [
+    BrowserModule,
+    FormsModule,
+    HttpClientModule
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+
+
+
+== package.json
+
+
+
+{
+  "name": "sample",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4"
+  }
+}
+
+== Angular Form ==
+
+
+===app\component\student-form.component.html  // read or change model data in form
+
+<div class="container">
+  <div [hidden]="submitted">
+    <h1>Student Form</h1>
+    <form (ngSubmit)="onSubmit()" #studentForm="ngForm">
+      <div class="form-group">
+        <label for="name">First Name</label>
+        <input type="text" class="form-control" id="firstName"
+               required
+               [(ngModel)]="student.firstName" name="firstName"
+               #name="ngModel">
+        <div [hidden]="name.valid || name.pristine"
+             class="alert alert-danger">
+          Name is required
+        </div>
+
+
+        <label for="name">Last Name</label>
+        <input type="text" class="form-control" id="lastName"
+               required
+               [(ngModel)]="student.lastName" name="lastName"
+               #name="ngModel">
+        <div [hidden]="name.valid || name.pristine"
+             class="alert alert-danger">
+          Name is required
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-success" [disabled]="!studentForm.form.valid">Submit</button>
+    </form>
+  </div>
+
+  <div [hidden]="!submitted">
+    <h2>You submitted the following:</h2>
+    <div class="row">
+      <div class="col-xs-3">First Name</div>
+      <div class="col-xs-9">{{ student.firstName }}</div>
+    </div>
+    <div class="row">
+      <div class="col-xs-3">last Name</div>
+      <div class="col-xs-9">{{ student.lastName }}</div>
+    </div>    
+    <br>
+    <button class="btn btn-primary" (click)="submitted=false">Edit</button>
+  </div>
+</div>
+== app.component.html 
+
+
+<app-student-form></app-student-form>
+Node JS file (server.js)
+
+
+
+var express = require('express');
+var app = express();
+var fs = require("fs");
+const bodyParser = require('body-parser');
+
+app.use(bodyParser.urlencoded({ extended: false }))
+// parse application/json
+app.use(bodyParser.json())
+
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
+app.post('/addStudent', function (req, res) {
+   // First read existing users. 
+   console.log(req);
+   console.log(req.body);
+   res.end( JSON.stringify(req.body));
+})
+
+var server = app.listen(8089, function () {
+   var host = server.address().address
+   var port = server.address().port
+   console.log("Example app listening at http://%s:%s", host, port)
+})
+
+node server.js
